@@ -1,0 +1,51 @@
+{
+    "name": "pruvo/laravel-firestore-connection",
+    "description": "Google Firebase database connection to Laravel",
+    "keywords": [
+        "pruvo",
+        "laravel-firestore-connection"
+    ],
+    "homepage": "https://github.com/Pruvo-app/laravel-firestore-connection.git",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Ennio Sousa",
+            "email": "ennio@enniosousa.com.br",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.3|^8.0",
+        "illuminate/support": "^8.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0",
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pruvo\\LaravelFirestoreConnection\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pruvo\\LaravelFirestoreConnection\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Pruvo\\LaravelFirestoreConnection\\LaravelFirestoreConnectionServiceProvider"
+            ]
+        }
+    }
+}
