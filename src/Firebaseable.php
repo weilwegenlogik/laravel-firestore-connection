@@ -170,7 +170,7 @@ trait Firebaseable
     public function setModelSettings()
     {
         return $this
-            ->setIncrementing(false)
+            ->setIncrementing(true)
             ->setKeyType('string')
             ->setConnection('firestore')
             ->setUsesTimestamps(false);
