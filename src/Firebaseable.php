@@ -2,8 +2,8 @@
 
 namespace Pruvo\LaravelFirestoreConnection;
 
-use App\Models\Course;
 use Exception;
+use Google\Cloud\Core\Timestamp;
 use Google\Cloud\Firestore\DocumentReference;
 use Google\Cloud\Firestore\DocumentSnapshot;
 use Illuminate\Contracts\Support\Arrayable;
@@ -119,6 +119,9 @@ use InvalidArgumentException;
  * | `<=`                 	| Less Than or Equal    	| `whereLessThanOrEqual()`    	|
  * 
  * ***
+ * @mixin \Eloquent
+ * @mixin \Illuminate\Database\Query\Builder
+ * @mixin \Illuminate\Database\Eloquent\Builder
  */
 trait Firebaseable
 {
@@ -157,6 +160,20 @@ trait Firebaseable
     public function getClient()
     {
         return $this->getConnection()->getClient();
+    }
+
+    /**
+     * Set model settings to Firestore
+     * 
+     * @return static
+     */
+    public function setModelSettings()
+    {
+        return $this
+            ->setIncrementing(false)
+            ->setKeyType('string')
+            ->setConnection('firestore')
+            ->setUsesTimestamps(false);
     }
 
     /**
@@ -225,9 +242,24 @@ trait Firebaseable
     {
         return [
             'id' => $this->getKey(),
-            'createTime' => optional($this->created_at)->format(Carbon::W3C),
-            'updateTime' => optional($this->updated_at)->format(Carbon::W3C),
+            'createTime' => $this->timestampParser($this->created_at),
+            'updateTime' => $this->timestampParser($this->updated_at),
         ];
+    }
+
+    /**
+     * Get the document reference.
+     *
+     * @param $timestamp string|\Carbon\Carbon|\Google\Cloud\Core\Timestamp
+     * @return string|null
+     */
+    private function timestampParser($timestamp)
+    {
+        if (!$timestamp) {
+            return null;
+        }
+        $timestamp = $timestamp instanceof Timestamp ? $timestamp->get() : $timestamp;
+        return Carbon::parse($timestamp)->format(Carbon::W3C);
     }
 
     /**
@@ -264,7 +296,7 @@ trait Firebaseable
         if ($this->parentModel instanceof Model) {
             return $this->parentModel;
         } 
-        
+
         // if this model has a prent model class, then return a new instance of it
         elseif (
             is_string($this->parentModel)
@@ -303,6 +335,16 @@ trait Firebaseable
     }
 
     /**
+     * get model collection reference
+     *
+     * @return \Google\Cloud\Firestore\CollectionReference
+     */
+    public function getCollectionReference()
+    {
+        return $this->getConnection()->getClient()->collection($this->getTable());
+    }
+
+    /**
      * Set DocumentReference on model
      *
      * @return static
@@ -337,14 +379,11 @@ trait Firebaseable
      */
     public function newFromBuilder($attributes = [], $connection = null)
     {
-        if ($attributes instanceof DocumentSnapshot) {
-            return parent::newFromBuilder($attributes->data(), $connection)
-                ->setDocumentReference($attributes->reference())
-                ->setKeyType('string')
-                ->setIncrementing(false);
-        }
+        $model = $attributes instanceof DocumentSnapshot
+            ? parent::newFromBuilder($attributes->data(), $connection)->setDocumentReference($attributes->reference())
+            : parent::newFromBuilder($attributes, $connection);
 
-        return parent::newFromBuilder($attributes, $connection);
+        return $model->setModelSettings();
     }
 
     /**
@@ -410,7 +449,7 @@ trait Firebaseable
         $this
             ->setAttribute($keyName, $documentReference->id())
             ->setDocumentReference($documentReference)
-            ->setKeyType('string');
+            ->setModelSettings();
     }
 
     /**
@@ -503,5 +542,17 @@ trait Firebaseable
         return $this->castAttributesToFirebase(
             parent::getDirty()
         );
+    }
+
+    /**
+     * Set if use the creation and update timestamps.
+     *
+     * @param  bool  $value
+     * @return static
+     */
+    public function setUsesTimestamps(bool $value)
+    {
+        $this->timestamps = $value;
+        return $this;
     }
 }
