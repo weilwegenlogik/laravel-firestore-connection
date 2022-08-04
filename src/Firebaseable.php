@@ -37,6 +37,7 @@ use InvalidArgumentException;
  * @method bool increment(string $attribute, int $amount = 1)
  * @method bool decrement(string $attribute, int $amount = 1)
  * 
+ * @method static \Illuminate\Database\Eloquent\Builder in(\Illuminate\Database\Eloquent\Model|\Google\Cloud\Firestore\DocumentReference|\Google\Cloud\Firestore\DocumentSnapshot|string|null $documentReference)
  * @method static \Illuminate\Database\Eloquent\Builder inCollectionGroup()
  * @method static \Illuminate\Database\Eloquent\Builder select(string[]|\Google\Cloud\Firestore\FieldPath[] $paths)
  * @method static \Illuminate\Database\Eloquent\Builder whereIn(string|\Google\Cloud\Firestore\FieldPath $path, array $values)
@@ -356,6 +357,8 @@ trait Firebaseable
             ? $documentReference->path()
             : $documentReference;
 
+        $this->setTable($this->getDocumentReference()->parent()->path());
+        
         return $this;
     }
 

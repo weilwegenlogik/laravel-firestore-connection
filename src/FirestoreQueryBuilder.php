@@ -2,15 +2,17 @@
 
 namespace Pruvo\LaravelFirestoreConnection;
 
-use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreSqlLikeGrammar;
 use Google\Cloud\Firestore\CollectionReference;
 use Google\Cloud\Firestore\DocumentReference;
 use Google\Cloud\Firestore\DocumentSnapshot;
 use Google\Cloud\Firestore\Query;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Pruvo\LaravelFirestoreConnection\Firebaseable;
+use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreSqlLikeGrammar;
 
 class FirestoreQueryBuilder extends QueryBuilder
 {
@@ -160,16 +162,35 @@ class FirestoreQueryBuilder extends QueryBuilder
         return $this;
     }
 
+    /**
+     * Query in collection group inside a path.
+     * 
+     * @param \Illuminate\Database\Eloquent\Model|\Google\Cloud\Firestore\DocumentReference|\Google\Cloud\Firestore\DocumentSnapshot|string|null $document
+     * @return static
+     */
     public function in($document = null)
     {
         if (Str::contains($this->from, '/')) {
             throw new InvalidArgumentException(sprintf("The collection [%s] is not compatible with collection group.", $this->from));
         }
+        
+        if (
+            $document instanceof Model
+            && in_array(Firebaseable::class, class_uses($document))
+            && $document->exists
+        ) {
+            $document = $document->getDocumentReference();
+        } elseif (is_string($document)) {
+            $document = $this->getConnection()->getClient()->document($document);
+        }
 
-        $this->collectionGroupParent = ($document instanceof DocumentReference
-            || $document instanceof DocumentSnapshot
-        ) ? $document->path() : $document;
+        if ($document instanceof DocumentReference || $document instanceof DocumentSnapshot) {
+            $document = $document->path();
+        } else {
+            throw new InvalidArgumentException(sprintf("Invalid document reference [%s]", $document));
+        }
 
+        $this->collectionGroupParent = $document;
         $this->collectionGroup = true;
 
         return $this;
