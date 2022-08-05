@@ -6,10 +6,13 @@ use Exception;
 use Google\Cloud\Core\Timestamp;
 use Google\Cloud\Firestore\DocumentReference;
 use Google\Cloud\Firestore\DocumentSnapshot;
+use Google\Cloud\Firestore\FieldValue;
+use Google\Cloud\Firestore\FieldValue\DeleteFieldValue;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
@@ -296,7 +299,7 @@ trait Firebaseable
         // if this model has a parent model instance, then return the instance
         if ($this->parentModel instanceof Model) {
             return $this->parentModel;
-        } 
+        }
 
         // if this model has a prent model class, then return a new instance of it
         elseif (
@@ -315,12 +318,11 @@ trait Firebaseable
 
             if ($parentDocumentReference) {
                 return $this->parentModel = $this->parentModel::fromDocumentReference($parentDocumentReference);
-            }
-            else {
+            } else {
                 throw new Exception(sprintf("Parent document not found on %s.", static::class));
             }
         }
-        
+
         // sometimes models does not have a parent model
         return null;
     }
@@ -358,7 +360,7 @@ trait Firebaseable
             : $documentReference;
 
         $this->setTable($this->getDocumentReference()->parent()->path());
-        
+
         return $this;
     }
 
@@ -535,6 +537,127 @@ trait Firebaseable
         );
     }
 
+    /** 
+     * It works like `array_diff` but with multidimensional arrays.
+     * 
+     * @param array $array1
+     * @param array $array2
+     * @param bool $strict
+     * 
+     * @link https://github.com/rogervila/array-diff-multidimensional/blob/master/src/ArrayDiffMultidimensional.php#L17-L59
+     */
+    private function multidimensionalArrayDiff($array1, $array2, $strict = true)
+    {
+        if (!is_array($array1)) {
+            throw new \InvalidArgumentException('$array1 must be an array!');
+        }
+
+        if (!is_array($array2)) {
+            return $array1;
+        }
+
+        $result = [];
+
+        foreach ($array1 as $key => $value) {
+            if (!array_key_exists($key, $array2)) {
+                $result[$key] = $value;
+                continue;
+            }
+
+            if (is_array($value) && count($value) > 0) {
+                $recursiveArrayDiff = $this->multidimensionalArrayDiff($value, $array2[$key], $strict);
+
+                if (count($recursiveArrayDiff) > 0) {
+                    $result[$key] = $recursiveArrayDiff;
+                }
+
+                continue;
+            }
+
+            $value1 = $value;
+            $value2 = $array2[$key];
+
+            if ($strict ? is_float($value1) && is_float($value2) : is_float($value1) || is_float($value2)) {
+                $value1 = (string) $value1;
+                $value2 = (string) $value2;
+            }
+
+            if ($strict ? $value1 !== $value2 : $value1 != $value2) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Check if the given array is multidimensional.
+     * 
+     * @param array $array 
+     * @return bool 
+     */
+    private function IsArrayMultidimensional($array): bool
+    {
+        if (!is_array($array)) {
+            dd($array);
+        }
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Remove combined delete fields from the given array.
+     * 
+     * All fields in `field2` will be removed from the array.
+     * 
+     * To prevent a empty value on the field, remove it intirely
+     * ```php
+     * $input = [
+     *      'field1' => 'value1',
+     *      'field2' => [
+     *          'first_name' => (object) DeleteFieldValue::class,
+     *          'last_name' => (object) DeleteFieldValue::class,
+     *          'age' => (object) DeleteFieldValue::class,
+     *      ],
+     * ];
+     * ```
+     * The output will be:
+     * ```php
+     * $output = [
+     *      'field1' => 'value1',
+     *      'field2' => (object) DeleteFieldValue::class,
+     * ];
+     * ```
+     *
+     * @param array $arr
+     * @return array
+     */
+    private function nestedDeletedField(array $arr): array
+    {
+        foreach ($arr as $key => $value) {
+            if (!is_array($value)) continue;
+
+            if ($this->IsArrayMultidimensional($value)) {
+                $value = $this->nestedDeletedField($value);
+            } else {
+                $filtered = array_filter($value, function ($v) {
+                    return $v instanceof DeleteFieldValue;
+                });
+
+                if (count($filtered) === count($value)) {
+                    $value = FieldValue::deleteField();
+                }
+            }
+            $arr[$key] = $value;
+        }
+
+        return $arr;
+    }
+
     /**
      * Get the attributes that have been changed since the last sync.
      *
@@ -542,9 +665,44 @@ trait Firebaseable
      */
     public function getDirty()
     {
-        return $this->castAttributesToFirebase(
+        $dirtyFields = $this->castAttributesToFirebase(
             parent::getDirty()
         );
+
+        foreach ($dirtyFields as $field => $dirty) {
+            if (!is_array($dirty)) continue;
+
+            if (Arr::isAssoc($dirty)) {
+                $original = $this->getOriginal($field);
+                if (is_null($original)) {
+                    $original = [];
+                }
+
+                // new or changed fields
+                $add_update = $this->multidimensionalArrayDiff($dirty, $original);
+
+                // delete or changed fields
+                $del = [];
+                $doted_dels = $this->multidimensionalArrayDiff(
+                    Arr::dot($original),
+                    Arr::dot($dirty)
+                );
+                foreach ($doted_dels as $path_to_del => $value) {
+                    data_set($del, $path_to_del, FieldValue::deleteField());
+                }
+
+                // deleted fields with `FieldValue::deleteField()`
+                // changed fields with new value
+                $changes = array_replace_recursive($del, $add_update);
+
+                // join nested field deletes to main field
+                $changes = $this->nestedDeletedField($changes);
+
+                $dirtyFields[$field] = $changes;
+            }
+        }
+
+        return $dirtyFields;
     }
 
     /**
