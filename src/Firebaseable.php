@@ -305,7 +305,8 @@ trait Firebaseable
         elseif (
             is_string($this->parentModel)
             && class_exists($this->parentModel)
-            && new $this->parentModel() instanceof self
+            && new $this->parentModel() instanceof Model
+            && $this->exists
         ) {
             $docRef = $this->getDocumentReference();
             if (!$docRef instanceof DocumentReference) {
