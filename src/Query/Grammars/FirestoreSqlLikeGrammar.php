@@ -70,9 +70,9 @@ class FirestoreSqlLikeGrammar extends Grammar
     protected function compileFrom(Builder $query, $table)
     {
         return 'from '
-            . ($query->collectionGroup ? 'all ' : '')
+            . ($query->fromCollectionGroup ? 'all ' : '')
             . $this->wrapTable($table)
-            . ($query->collectionGroup && $query->collectionGroupParent ? " in ($query->collectionGroupParent) " : '');
+            . ($query->fromCollectionGroup && $query->fromInDocument ? " in ($query->fromInDocument) " : '');
     }
 
     /**

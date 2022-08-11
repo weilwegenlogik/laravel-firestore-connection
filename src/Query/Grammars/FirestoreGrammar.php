@@ -114,9 +114,9 @@ class FirestoreGrammar extends Grammar
     protected function compileFrom(Builder $query, $collection)
     {
         return [[
-            'method' => $query->collectionGroup ? 'collectionGroup' : 'collection',
-            'arguments' => $query->collectionGroup && $query->collectionGroupParent
-                ? [$collection, $query->collectionGroupParent]
+            'method' => $query->fromCollectionGroup ? 'collectionGroup' : 'collection',
+            'arguments' => $query->fromCollectionGroup && $query->fromInDocument
+                ? [$collection, $query->fromInDocument]
                 : [$collection]
         ]];
     }
@@ -424,7 +424,7 @@ class FirestoreGrammar extends Grammar
      */
     public function compileInsert(Builder $query, array $values)
     {
-        if ($query->collectionGroup) {
+        if ($query->fromCollectionGroup) {
             throw new \Exception('Collection group is not supported for insert queries.');
         }
 

@@ -63,17 +63,24 @@ class FirestoreQueryBuilder extends QueryBuilder
      */
     public $limitToLast;
 
+    /**
+     * The collection which the query is targeting.
+     *
+     * @var string
+     */
+    public $from;
+
     /** 
      * Query in collection group.
      * @var bool
      */
-    public $collectionGroup = false;
+    public $fromCollectionGroup = false;
 
     /** 
-     * Query in collection group.
+     * Query on collection group in document reference.
      * @var null|string
      */
-    public $collectionGroupParent;
+    public $fromInDocument;
 
     /**
      * Collection name where quere is building. 
@@ -140,12 +147,12 @@ class FirestoreQueryBuilder extends QueryBuilder
         }
 
         // query on collection group
-        $this->collectionGroup = !Str::contains($this->from, '/') &&
+        $this->fromCollectionGroup = !Str::contains($this->from, '/') &&
             // can be true to a simple collection group
             // or a document reference path to a collection group
             ($collectionGroup === true || ($collectionGroup && is_string($collectionGroup)));
 
-        $this->collectionGroupParent =  is_string($collectionGroup) ? $collectionGroup : null;
+        $this->fromInDocument =  is_string($collectionGroup) ? $collectionGroup : null;
 
         return $this;
     }
@@ -157,7 +164,7 @@ class FirestoreQueryBuilder extends QueryBuilder
      */
     public function inCollectionGroup()
     {
-        $this->collectionGroup = true;
+        $this->fromCollectionGroup = true;
 
         return $this;
     }
@@ -173,7 +180,7 @@ class FirestoreQueryBuilder extends QueryBuilder
         if (Str::contains($this->from, '/')) {
             throw new InvalidArgumentException(sprintf("The collection [%s] is not compatible with collection group.", $this->from));
         }
-        
+
         if (
             $document instanceof Model
             && in_array(Firebaseable::class, class_uses($document))
@@ -190,8 +197,8 @@ class FirestoreQueryBuilder extends QueryBuilder
             throw new InvalidArgumentException(sprintf("Invalid document reference [%s]", $document));
         }
 
-        $this->collectionGroupParent = $document;
-        $this->collectionGroup = true;
+        $this->fromInDocument = $document;
+        $this->inCollectionGroup();
 
         return $this;
     }
