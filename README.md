@@ -66,7 +66,7 @@ Laravel is a framework originally designed to use SQL databases for its ORM. How
 From point of view that you are used to SQL databases, the following features are not supported:
 
 ### SQL syntaxe
-There are not any way to query firestore database using string (like SQL syntaxe) all queries must be done via Firestore SDK.
+There are not any way to query firestore database using string (like SQL syntaxe). All queries must be done via Firestore SDK.
 
 ### Only supports `AND` operator
 - SQL database supports `select * from users where status = 'disabled' or age > 18;` but it is not supported on Firestore.
@@ -126,7 +126,7 @@ composer test
 
 ### Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+Please see [CHANGELOG](https://github.com/Pruvo-app/laravel-firestore-connection/releases) for more information what has changed recently.
 
 ## Contributing
 
