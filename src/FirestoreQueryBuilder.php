@@ -5,6 +5,7 @@ namespace Pruvo\LaravelFirestoreConnection;
 use Google\Cloud\Firestore\CollectionReference;
 use Google\Cloud\Firestore\DocumentReference;
 use Google\Cloud\Firestore\DocumentSnapshot;
+use Google\Cloud\Firestore\FieldPath;
 use Google\Cloud\Firestore\Query;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -201,6 +202,38 @@ class FirestoreQueryBuilder extends QueryBuilder
         $this->inCollectionGroup();
 
         return $this;
+    }
+
+    /**
+     * Execute the query and get the first result.
+     *
+     * @param Model|DocumentReference|DocumentSnapshot|string $of
+     * @return $this
+     */
+    public function of($of)
+    {
+        if (is_string($of)) {
+            $ref = $this->getConnection()->getClient()->document($of)->path();
+        } elseif ($of instanceof DocumentReference || $of instanceof DocumentSnapshot) {
+            $ref = $of->path();
+        } elseif ($of instanceof Model) {
+            $ref = $of->getDocumentReference()->path();
+        } else {
+            throw new \InvalidArgumentException(sprintf(
+                "The argument must be valid string path or one of the following instaces: [%s], [%s], or [%s]",
+                Model::class,
+                DocumentReference::class,
+                DocumentSnapshot::class
+            ));
+        }
+
+        return $this
+            ->inCollectionGroup()
+            ->orderBy(FieldPath::documentId(), 'asc')
+            ->startAt([$ref])
+            // The `\uf8ff` character used in the query above is a very high code point in the Unicode range. 
+            // Because it is after most regular characters in Unicode, the query matches all values that start with `$ref`.
+            ->endAt([$ref . "\uf8ff"]);
     }
 
     /**

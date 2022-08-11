@@ -58,7 +58,13 @@ use InvalidArgumentException;
  * @method static \Illuminate\Database\Eloquent\Builder when(bool $condition, \Closure $ifCallback, \Closure $elseCallback = null)
  * @method static \Illuminate\Database\Eloquent\Builder latest(string|\Google\Cloud\Firestore\FieldPath $path = null)
  * @method static \Illuminate\Database\Eloquent\Builder offset(int $offset)
- * @method static \Illuminate\Database\Eloquent\Builder of(Model|DocumentReference|DocumentSnaphot $of)
+ * @method static \Illuminate\Database\Eloquent\Builder of(Model|DocumentReference|DocumentSnaphot|string $of) This method is a alias of following example.
+ * ```php
+ * $query
+ *      ->orderBy(FieldPath::documentId(), 'asc')
+ *      ->startAt([$documentReferenceStringPath])
+ *      ->endAt([$documentReferenceStringPath . "\uf8ff"]);
+ * ```
  * @method static \Illuminate\Database\Eloquent\Builder orderBy(string|\Google\Cloud\Firestore\FieldPath $path, string $direction = 'ASC')
  * @method static \Illuminate\Database\Eloquent\Builder startAt(string[]|\Google\Cloud\Firestore\FieldPath[]|mixed[]|DocumentSnapshot)
  * @method static \Illuminate\Database\Eloquent\Builder startAfter(string[]|\Google\Cloud\Firestore\FieldPath[]|mixed[]|DocumentSnapshot)
