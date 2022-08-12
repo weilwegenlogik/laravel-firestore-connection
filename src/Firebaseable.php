@@ -37,8 +37,8 @@ use InvalidArgumentException;
  * 
  * @method static \Illuminate\Pagination\LengthAwarePaginator paginate()
  * 
- * @method bool increment(string $attribute, int $amount = 1)
- * @method bool decrement(string $attribute, int $amount = 1)
+ * @method bool increment(string $attribute, int $amount = 1, array $extra = [])
+ * @method bool decrement(string $attribute, int $amount = 1, array $extra = [])
  * 
  * @method static \Illuminate\Database\Eloquent\Builder in(\Illuminate\Database\Eloquent\Model|\Google\Cloud\Firestore\DocumentReference|\Google\Cloud\Firestore\DocumentSnapshot|string|null $documentReference)
  * @method static \Illuminate\Database\Eloquent\Builder inCollectionGroup()

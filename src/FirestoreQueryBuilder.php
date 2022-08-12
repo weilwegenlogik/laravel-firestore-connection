@@ -6,10 +6,10 @@ use Google\Cloud\Firestore\CollectionReference;
 use Google\Cloud\Firestore\DocumentReference;
 use Google\Cloud\Firestore\DocumentSnapshot;
 use Google\Cloud\Firestore\FieldPath;
+use Google\Cloud\Firestore\FieldValue;
 use Google\Cloud\Firestore\Query;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Pruvo\LaravelFirestoreConnection\Firebaseable;
@@ -596,6 +596,48 @@ class FirestoreQueryBuilder extends QueryBuilder
         $this->applyBeforeQueryCallbacks();
 
         return $this->connection->update($this, $values);
+    }
+
+    /**
+     * Increment a column's value by a given amount.
+     *
+     * @param  string  $column
+     * @param  float|int  $amount
+     * @param  array  $extra
+     * @return int
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function increment($column, $amount = 1, array $extra = [])
+    {
+        if (!is_numeric($amount)) {
+            throw new InvalidArgumentException('Non-numeric value passed to increment method.');
+        }
+
+        $columns = array_merge([$column => FieldValue::increment($amount)], $extra);
+
+        return $this->update($columns);
+    }
+
+    /**
+     * Decrement a column's value by a given amount.
+     *
+     * @param  string  $column
+     * @param  float|int  $amount
+     * @param  array  $extra
+     * @return int
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function decrement($column, $amount = 1, array $extra = [])
+    {
+        if (!is_numeric($amount)) {
+            throw new InvalidArgumentException('Non-numeric value passed to decrement method.');
+        }
+
+        $columns = array_merge([$column => FieldValue::increment($amount * -1)], $extra);
+
+        return $this->update($columns);
     }
 
     /**
