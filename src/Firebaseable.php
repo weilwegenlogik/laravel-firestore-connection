@@ -676,7 +676,7 @@ trait Firebaseable
             parent::getDirty()
         );
 
-        return dirtyFields;
+        return $dirtyFields;
 
         foreach ($dirtyFields as $field => $dirty) {
             if (!is_array($dirty)) continue;
