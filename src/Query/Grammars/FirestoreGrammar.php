@@ -139,7 +139,7 @@ class FirestoreGrammar extends Grammar
         // Firebase does not support query with where when is quering a collection group in a path.
         // Suggestion is use `of()` to query all documents in a collection group 
         // where the document reference path starts with and ends with the given path.
-        if($query->fromInDocument){
+        if($query->wheres && $query->fromInDocument){
             throw new InvalidArgumentException('Query collection group in document path does not support where clauses.');
         }
 
