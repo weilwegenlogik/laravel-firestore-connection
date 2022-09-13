@@ -49,9 +49,7 @@ class FirestoreClient extends Client
     public function collectionGroup($id, $relativeName = null)
     {
         if (strpos($id, '/') !== false) {
-            throw new \InvalidArgumentException(
-                'Collection ID may not contain a slash.'
-            );
+            return $this->collection($id);
         }
         if ($relativeName instanceof DocumentSnapshot || $relativeName instanceof DocumentReference) {
             $relativeName = $relativeName->path();

@@ -122,50 +122,42 @@ class FirestoreQueryBuilder extends QueryBuilder
     /**
      * Set the table which the query is targeting.
      *
-     * @param  \Closure|\Illuminate\Database\Query\Builder|string  $collection
-     * @param  bool|null  $collectionGroup
+     * @param  string|\Google\Cloud\Firestore\CollectionReference $collection
+     * @param  bool|\Illuminate\Database\Eloquent\Model|\Google\Cloud\Firestore\DocumentReference|\Google\Cloud\Firestore\DocumentSnapshot|string|null  $on
+     * @throws \InvalidArgumentException if an invalid collection or document path is provided.
      * @return $this
      */
-    public function from($collection, $collectionGroup = null)
+    public function from($collection, $on = null)
     {
-        // collection name
+        // cast collection to instance (validate the collection path)
         if (is_string($collection)) {
-            $this->from = $collection;
+            $collection = $this->getConnection()->getClient()->collection($collection);
         }
 
-        // collection reference
-        elseif ($collection instanceof CollectionReference) {
+        if ($collection instanceof CollectionReference) {
             $this->from = $collection->path();
-        } else {
-            throw new \InvalidArgumentException('Invalid collection reference');
         }
 
-        if (
-            $collectionGroup instanceof DocumentReference
-            || $collectionGroup instanceof DocumentSnapshot
-        ) {
-            $collectionGroup = $collectionGroup->path();
+        if (is_bool($on)) {
+            $this->inCollectionGroup($on);
+        } elseif($on) {
+            $this->in($on);
         }
-
-        // query on collection group
-        $this->fromCollectionGroup = !Str::contains($this->from, '/') &&
-            // can be true to a simple collection group
-            // or a document reference path to a collection group
-            ($collectionGroup === true || ($collectionGroup && is_string($collectionGroup)));
-
-        $this->fromInDocument =  is_string($collectionGroup) ? $collectionGroup : null;
 
         return $this;
     }
 
     /**
      * Query in collection group.
-     *
+     * @param bool $active 
+     * - `true` to query in collection group
+     * - `false` to query in collection path
+     * 
      * @return static
      */
-    public function inCollectionGroup()
+    public function inCollectionGroup(bool $active = true)
     {
-        $this->fromCollectionGroup = true;
+        $this->fromCollectionGroup = $active;
 
         return $this;
     }
