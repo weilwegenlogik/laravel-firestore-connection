@@ -132,6 +132,9 @@ use InvalidArgumentException;
  * @mixin \Eloquent
  * @mixin \Illuminate\Database\Query\Builder
  * @mixin \Illuminate\Database\Eloquent\Builder
+ * @use \Eloquent
+ * @use \Illuminate\Database\Query\Builder
+ * @use \Illuminate\Database\Eloquent\Builder
  */
 trait Firebaseable
 {
@@ -414,6 +417,39 @@ trait Firebaseable
         }
 
         return $model;
+    }
+
+    /**
+     * Check the query is on collection group
+     * @return bool
+     */
+    public function queryOnCollectionGroup(): bool
+    {
+        $modelHasParent = property_exists($this, 'parentModel') && $this->parentModel;
+        $modelTableIsPath = strpos($this->getTable(), '/') !== false;
+
+        return $modelHasParent && !$modelTableIsPath;
+    }
+
+    /**
+     * Get a new query builder for the model's table.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function newQuery()
+    {
+        return parent::newQuery()->inCollectionGroup($this->queryOnCollectionGroup());
+    }
+
+    /**
+     * Get a new query to restore one or more models by their queueable IDs.
+     *
+     * @param  array|int  $ids
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function newQueryForRestoration($ids)
+    {
+        return parent::newQueryForRestoration($ids)->inCollectionGroup($this->queryOnCollectionGroup());
     }
 
     /**
