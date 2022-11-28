@@ -132,9 +132,6 @@ use InvalidArgumentException;
  * @mixin \Eloquent
  * @mixin \Illuminate\Database\Query\Builder
  * @mixin \Illuminate\Database\Eloquent\Builder
- * @use \Eloquent
- * @use \Illuminate\Database\Query\Builder
- * @use \Illuminate\Database\Eloquent\Builder
  */
 trait Firebaseable
 {
@@ -394,8 +391,8 @@ trait Firebaseable
      */
     public function newFromBuilder($attributes = [], $connection = null)
     {
-        $model = $attributes instanceof DocumentSnapshot
-            ? parent::newFromBuilder($attributes->data(), $connection)->setDocumentReference($attributes->reference())
+        $model = $attributes instanceof DocumentSnapshot || $attributes instanceof FirestoreDocumentSnapshot
+            ? parent::newFromBuilder($attributes->data(), $connection)->setDocumentReference($attributes->path())
             : parent::newFromBuilder($attributes, $connection);
 
         return $model->setModelSettings();

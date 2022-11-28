@@ -12,6 +12,7 @@ use Pruvo\LaravelFirestoreConnection\Schema\Grammars\FirestoreGrammar as SchemaG
 use Closure;
 use Exception;
 use Google\Cloud\Core\Exception\ServiceException;
+use Google\Cloud\Firestore\DocumentSnapshot;
 use Google\Cloud\Firestore\FieldPath;
 use Illuminate\Database\Connection;
 use Illuminate\Database\QueryException;
@@ -39,13 +40,13 @@ class FirestoreConnection extends Connection
 
         $config = Arr::except($config, ['driver', 'name', 'prefix']);
 
-        if(
+        if (
             array_key_exists('keyFilePath', $config)
             && is_file($config['keyFilePath']) === false
         ) {
             $config['keyFilePath'] = null;
         }
-        
+
         $config = array_filter($config);
 
         $this->client = new FirestoreClient($config);
@@ -260,7 +261,11 @@ class FirestoreConnection extends Connection
         $query = FirestoreQueryStatement::from($query, FirestoreQueryStatement::SELECT, $bindings);
         return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
             /** @var \Pruvo\LaravelFirestoreConnection\FirestoreQueryStatement $query */
-            return $query->toFirestore()->documents();
+            $result = $query->toFirestore()->documents();
+
+            return collect($result)->map(function (DocumentSnapshot $documentSnapshot) {
+                return FirestoreDocumentSnapshot::fromDocumentSnapshot($this->getConfig('name'), $documentSnapshot);
+            });
         });
     }
 
