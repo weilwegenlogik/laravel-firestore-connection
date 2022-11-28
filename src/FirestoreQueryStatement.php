@@ -2,8 +2,8 @@
 
 namespace Pruvo\LaravelFirestoreConnection;
 
-use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreSqlLikeGrammar;
 use Illuminate\Support\Arr;
+use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreSqlLikeGrammar;
 
 class FirestoreQueryStatement
 {

@@ -2,13 +2,6 @@
 
 namespace Pruvo\LaravelFirestoreConnection;
 
-use Pruvo\LaravelFirestoreConnection\FirestoreClient;
-use Pruvo\LaravelFirestoreConnection\FirestoreQueryBuilder;
-use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreGrammar as QueryGrammar;
-use Pruvo\LaravelFirestoreConnection\Query\Processors\FirestoreProcessor;
-use Pruvo\LaravelFirestoreConnection\Schema\FirestoreBuilder;
-use Pruvo\LaravelFirestoreConnection\Schema\FirestoreSchemaState;
-use Pruvo\LaravelFirestoreConnection\Schema\Grammars\FirestoreGrammar as SchemaGrammar;
 use Closure;
 use Exception;
 use Google\Cloud\Core\Exception\ServiceException;
@@ -20,6 +13,13 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use PDO;
+use Pruvo\LaravelFirestoreConnection\FirestoreClient;
+use Pruvo\LaravelFirestoreConnection\FirestoreQueryBuilder;
+use Pruvo\LaravelFirestoreConnection\Query\Grammars\FirestoreGrammar as QueryGrammar;
+use Pruvo\LaravelFirestoreConnection\Query\Processors\FirestoreProcessor;
+use Pruvo\LaravelFirestoreConnection\Schema\FirestoreBuilder;
+use Pruvo\LaravelFirestoreConnection\Schema\FirestoreSchemaState;
+use Pruvo\LaravelFirestoreConnection\Schema\Grammars\FirestoreGrammar as SchemaGrammar;
 
 class FirestoreConnection extends Connection
 {
