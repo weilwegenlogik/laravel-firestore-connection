@@ -7,6 +7,7 @@ use Exception;
 use Google\Cloud\Core\Exception\ServiceException;
 use Google\Cloud\Firestore\DocumentSnapshot;
 use Google\Cloud\Firestore\FieldPath;
+use Google\Cloud\Firestore\Transaction;
 use Illuminate\Database\Connection;
 use Illuminate\Database\QueryException;
 use Illuminate\Filesystem\Filesystem;
@@ -20,6 +21,7 @@ use Pruvo\LaravelFirestoreConnection\Query\Processors\FirestoreProcessor;
 use Pruvo\LaravelFirestoreConnection\Schema\FirestoreBuilder;
 use Pruvo\LaravelFirestoreConnection\Schema\FirestoreSchemaState;
 use Pruvo\LaravelFirestoreConnection\Schema\Grammars\FirestoreGrammar as SchemaGrammar;
+use Throwable;
 
 class FirestoreConnection extends Connection
 {
@@ -60,6 +62,50 @@ class FirestoreConnection extends Connection
     public function getClient()
     {
         return $this->client;
+    }
+
+    /**
+     * Execute a Closure within a transaction.
+     *
+     * @param  \Closure  $callback
+     * @param  int  $attempts
+     * @return mixed
+     *
+     * @throws \Throwable
+     */
+    public function transaction(Closure $callback, $attempts = 1)
+    {
+        for ($currentAttempt = 1; $currentAttempt <= $attempts; $currentAttempt++) {
+
+            $this->fireConnectionEvent('beganTransaction');
+
+            // We'll simply execute the given callback within a try / catch block and if we
+            // catch any exception we can rollback this transaction so that none of this
+            // gets actually persisted to a database or stored in a permanent fashion.
+            try {
+                $callbackResult = $this->getClient()
+                    ->runTransaction(function (Transaction $transaction) use ($callback) {
+                        return $callback($this, $transaction);
+                    });
+            }
+
+            // If we catch an exception we'll rollback this transaction and try again if we
+            // are not out of attempts. If we are out of attempts we will just throw the
+            // exception back out and let the developer handle an uncaught exceptions.
+            catch (Throwable $e) {
+                $this->handleTransactionException(
+                    $e,
+                    $currentAttempt,
+                    $attempts
+                );
+
+                continue;
+            }
+
+            $this->fireConnectionEvent('committed');
+
+            return $callbackResult;
+        }
     }
 
     /**
