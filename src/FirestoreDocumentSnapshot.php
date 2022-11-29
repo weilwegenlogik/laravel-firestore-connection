@@ -212,6 +212,42 @@ class FirestoreDocumentSnapshot extends ArrayObject
     }
 
     /**
+     * Get a subset of the fields.
+     *
+     * Example:
+     * ```
+     * $value = $snapshot->only('name', 'email');
+     * // or
+     * $value = $snapshot->only(['name', 'email']);
+     * ```
+     *
+     * @param array|string $fields The field to retrieve.
+     * @return array
+     */
+    public function only(...$keys)
+    {
+        return Arr::only($this->data(), is_array($keys[0]) ? $keys[0] : $keys);
+    }
+
+    /**
+     * Get all fields except for a specified subset.
+     *
+     * Example:
+     * ```
+     * $value = $snapshot->except('name', 'email');
+     * // or
+     * $value = $snapshot->except(['name', 'email']);
+     * ```
+     *
+     * @param array|string $fields The field to exclude.
+     * @return array
+     */
+    public function except(...$keys)
+    {
+        return Arr::except($this->data(), is_array($keys[0]) ? $keys[0] : $keys);
+    }
+
+    /**
      * Returns true if the document exists in the database.
      *
      * Example:
