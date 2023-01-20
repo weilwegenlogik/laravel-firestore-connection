@@ -243,36 +243,6 @@ trait Firebaseable
     }
 
     /**
-     * Get metadata
-     *
-     * @return array
-     * @deprecated
-     */
-    public function getMetadata()
-    {
-        return [
-            'id' => $this->getKey(),
-            'createTime' => $this->timestampParser($this->created_at),
-            'updateTime' => $this->timestampParser($this->updated_at),
-        ];
-    }
-
-    /**
-     * Get the document reference.
-     *
-     * @param $timestamp string|\Carbon\Carbon|\Google\Cloud\Core\Timestamp
-     * @return string|null
-     */
-    private function timestampParser($timestamp)
-    {
-        if (!$timestamp) {
-            return null;
-        }
-        $timestamp = $timestamp instanceof Timestamp ? $timestamp->get() : $timestamp;
-        return Carbon::parse($timestamp)->format(Carbon::W3C);
-    }
-
-    /**
      * Set parent model.
      * 
      * @param string|\Illuminate\Database\Eloquent\Model $model
