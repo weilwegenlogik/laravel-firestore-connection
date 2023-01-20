@@ -74,16 +74,56 @@ There are not any way to query firestore database using string (like SQL syntaxe
 ### Do not support equals to `null`
 - But there is a workaround: `orderBy('field', 'ASC')->startAt(null)`.
 
-### Do not support relationship because it is impossible cross collection data, so 
-- you cannot use `belongsTo`, `hasOne`, `hasMany`, `morphOne`, `morphMany`, `belongsToMany` or `morphToMany`;
-- In contrast, Firestore has sub collections, so you can use `hasSubcollection` to define relationships.
+### Model does not support relationship because it is impossible cross collection data, so 
+- you can not use `belongsTo`, `hasOne`, `hasMany`, `morphOne`, `morphMany`, `belongsToMany` or `morphToMany`;
+- In contrast, Firestore has subcollections, so you can use `hasSubcollection` to define relationships.
 
-### Firestore does not support auto increment. 
-- To keep the ID orderable it uses `Str::orderedUuid();` to generate new insert ID and document name.
+### Model ID behavior
+- Firestore does not support numeric auto increment. To keep the records orderable it uses `Str::orderedUuid();`.
+- Firestore is a document database, so the primary key is the document name.
+- If auto increment is enabled, and you want to set a custom UUID, you must force fill the `__name__` attribute before saving the model.
+```php
+$user = User::newModelInstance([
+    'name' => 'Jhon Joe',
+    'email' => 'jhon.joe@example.com',
+    'password'=> bcrypt('123456'),
+]);
+$user->forceFill(['__name__' => '00000000-0000-0000-0000-000000000000'])->save();
+```
 
 ### Firestore database types
 - Avoid use `reference` type becouse it can not be serialized and does not have advantages. Instead use document reference path (string representation of `DocumentReference`).
 - Avoid use `map` and `array` types unless it is needed. The `map` is equivalent to associative array, and `array` is equivalent to sequencial array.
+- **Date attributes** are stored as string by default. To store as timestamp (native Firestore type) you must to:
+    - set a instance of `DateTimeInterface` as value; Carbon extends `DateTimeInterface` and can safely be used;
+    - use the cast `Pruvo\LaravelFirestoreConnection\Casts\AsCarbon` on the model;
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Pruvo\LaravelFirestoreConnection\Casts\AsCarbon;
+use Pruvo\LaravelFirestoreConnection\Firestoreable;
+
+class Book extends Model
+{
+    use HasFactory;
+    use Firestoreable;
+
+    public $connection = 'firestore';
+    public $table = 'books';
+    public $primaryKey = 'id';
+    public $keyType = 'string';
+    public $perPage = 10;
+
+    protected $casts = [
+        'created_at' => AsCarbon::class,
+        'updated_at' => AsCarbon::class,
+    ];
+}
+```
 
 ### Complexy queries
 - It is strogly recommended use [Laravel Scout](https://laravel.com/docs/master/scout) with `pruvo/laravel-firestore-connection`.
