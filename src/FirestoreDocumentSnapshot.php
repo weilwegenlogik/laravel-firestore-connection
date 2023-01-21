@@ -66,7 +66,7 @@ class FirestoreDocumentSnapshot extends ArrayObject
             'updateTime' => ($ut = $documentSnapshot->updateTime()) ? Carbon::instance($ut->get()) : null,
             'readTime' => ($rt = $documentSnapshot->readTime()) ? Carbon::instance($rt->get()) : null,
         ]));
-        $arrayObject->setFlags(ArrayObject::STD_PROP_LIST | ArrayObject::ARRAY_AS_PROPS);
+        $arrayObject->setFlags(ArrayObject::ARRAY_AS_PROPS);
         return $arrayObject;
     }
 
