@@ -361,9 +361,15 @@ trait Firebaseable
      */
     public function newFromBuilder($attributes = [], $connection = null)
     {
+        // merge attributes with initialized model attributes
+        // to avoid missing attributes on model because it does not exist on firestore
+        $mergeAttributesWithInitialized = function ($attributes) {
+            return array_merge_recursive($this->newInstance()->getAttributes(), $attributes);
+        };
+
         $model = $attributes instanceof DocumentSnapshot || $attributes instanceof FirestoreDocumentSnapshot
-            ? parent::newFromBuilder($attributes->data(), $connection)->setDocumentReference($attributes->path())
-            : parent::newFromBuilder($attributes, $connection);
+            ? parent::newFromBuilder($mergeAttributesWithInitialized($attributes->data()), $connection)->setDocumentReference($attributes->path())
+            : parent::newFromBuilder($mergeAttributesWithInitialized($attributes), $connection);
 
         return $model->setModelSettings();
     }
@@ -540,7 +546,7 @@ trait Firebaseable
      *
      * @return array
      */
-    protected function getAttributesForInsert()
+    public function getAttributesForInsert()
     {
         return $this->castAttributesToFirebase(
             parent::getAttributesForInsert()
