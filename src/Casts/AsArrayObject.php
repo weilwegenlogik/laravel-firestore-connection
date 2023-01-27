@@ -18,7 +18,7 @@ class AsArrayObject implements CastsAttributes
      */
     public function get($model, $key, $value, $attributes)
     {
-        return isset($attributes[$key]) ? new ArrayObject($attributes[$key]) : null;
+        return isset($attributes[$key]) ? new ArrayObject($attributes[$key], ArrayObject::ARRAY_AS_PROPS) : null;
     }
 
     /**
