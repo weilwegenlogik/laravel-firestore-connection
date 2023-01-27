@@ -364,7 +364,11 @@ trait Firebaseable
         // merge attributes with initialized model attributes
         // to avoid missing attributes on model because it does not exist on firestore
         $mergeAttributesWithInitialized = function ($attributes) {
-            return array_merge_recursive($this->newInstance()->getAttributes(), $attributes);
+            $attrs = $this->newInstance()->getAttributes();
+            foreach (Arr::dot($attributes) as $key => $value) {
+                data_set($attrs, $key, $value);
+            }
+            return $attrs;
         };
 
         $model = $attributes instanceof DocumentSnapshot || $attributes instanceof FirestoreDocumentSnapshot
